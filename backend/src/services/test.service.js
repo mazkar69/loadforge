@@ -29,7 +29,7 @@ export const runTestById = async (testId, testConfig, emit) => {
     const log = (level, message) => {
         const entry = { timestamp: Date.now(), level, message };
         logs.push(entry);
-        if (logs.length > 500) logs.shift();
+        // if (logs.length > 500) logs.shift();
         emit('test:log', { testId, ...entry });
     };
 
