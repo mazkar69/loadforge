@@ -84,7 +84,20 @@ function buildFetchOptions(request) {
  * Execute a single request, returning a result object.
  */
 async function executeRequest(request, attemptNum = 0) {
-    if (aborted) return { success: false, error: 'aborted', latency: 0, statusCode: null, size: 0, timedOut: false };
+    if (aborted) {
+        return {
+            success: false,
+            url: request.url,
+            method: request.method,
+            requestId: request._id,
+            statusCode: null,
+            status: null,
+            latency: 0,
+            size: 0,
+            error: 'aborted',
+            timedOut: false,
+        };
+    }
 
     const start = Date.now();
     const { url, options, timer } = buildFetchOptions(request);
@@ -98,7 +111,11 @@ async function executeRequest(request, attemptNum = 0) {
 
         return {
             success: response.ok,
+            url,
+            method: request.method,
+            requestId: request._id,
             statusCode: response.status,
+            status: response.status,
             latency,
             size,
             error: response.ok ? null : `HTTP ${response.status}`,
@@ -116,7 +133,11 @@ async function executeRequest(request, attemptNum = 0) {
 
         return {
             success: false,
+            url,
+            method: request.method,
+            requestId: request._id,
             statusCode: null,
+            status: null,
             latency,
             size: 0,
             error: isTimeout ? 'timeout' : (err.message || 'network error'),

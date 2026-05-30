@@ -5,7 +5,7 @@ import env from './env.js';
 const MAX_RETRIES = 5;
 const RETRY_DELAY_MS = 3000;
 
-async function connectDB(retries = MAX_RETRIES) {
+export async function connectDB(retries = MAX_RETRIES) {
     try {
         await mongoose.connect(env.MONGO_URI, {
             serverSelectionTimeoutMS: 5000,

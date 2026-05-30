@@ -12,6 +12,15 @@ const useTestRunner = () => {
     const [testId, setTestId] = useState(null);
     const cleanupRef = useRef([]);
 
+    const cleanup = useCallback(
+        (tid) => {
+            cleanupRef.current.forEach((fn) => fn && fn());
+            cleanupRef.current = [];
+            if (tid) leaveTest(tid);
+        },
+        [leaveTest]
+    );
+
     const run = useCallback(
         async (testConfig) => {
             resetLive();
@@ -26,7 +35,7 @@ const useTestRunner = () => {
                 // Wire up socket events
                 cleanupRef.current.push(
                     on('test:progress', (d) => {
-                        appendLog(d);
+                        appendLog(d.lastResult);
                         setProgress(d.completed ? Math.round((d.completed / (d.total || 1)) * 100) : 0);
                     })
                 );
@@ -67,16 +76,7 @@ const useTestRunner = () => {
                 throw err;
             }
         },
-        [joinTest, on, appendLog, setLiveMetrics, setProgress, setIsRunning, resetLive, navigate]
-    );
-
-    const cleanup = useCallback(
-        (tid) => {
-            cleanupRef.current.forEach((fn) => fn && fn());
-            cleanupRef.current = [];
-            if (tid) leaveTest(tid);
-        },
-        [leaveTest]
+        [joinTest, on, appendLog, setLiveMetrics, setProgress, setIsRunning, resetLive, navigate, cleanup]
     );
 
     return { run, testId, cleanup };

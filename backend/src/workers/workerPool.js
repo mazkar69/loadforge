@@ -115,7 +115,17 @@ export class WorkerPool extends EventEmitter {
                     workerData: { requests: chunk, config: workerConfig, workerId: idx },
                 });
 
+                let workerFinished = false;
                 this.workers.push(worker);
+
+                const markWorkerFinished = () => {
+                    if (workerFinished) return;
+                    workerFinished = true;
+                    this.completedWorkers++;
+                    if (this.completedWorkers === this.workers.length) {
+                        this._finish(resolve);
+                    }
+                };
 
                 worker.on('message', (msg) => {
                     if (msg.type === 'progress') {
@@ -127,25 +137,23 @@ export class WorkerPool extends EventEmitter {
                             result: msg.result,
                         });
                     } else if (msg.type === 'done') {
-                        this.completedWorkers++;
-                        if (this.completedWorkers === this.workers.length) {
-                            this._finish(resolve);
-                        }
+                        markWorkerFinished();
                     } else if (msg.type === 'error') {
                         logger.error(`Worker ${idx} error: ${msg.error}`);
-                        this.completedWorkers++;
-                        if (this.completedWorkers === this.workers.length) {
-                            this._finish(resolve);
-                        }
+                        markWorkerFinished();
                     }
                 });
 
                 worker.on('error', (err) => {
                     logger.error(`Worker ${idx} threw: ${err.message}`);
-                    this.completedWorkers++;
-                    if (this.completedWorkers === this.workers.length) {
-                        this._finish(resolve);
+                    markWorkerFinished();
+                });
+
+                worker.on('exit', (code) => {
+                    if (code !== 0 && !workerFinished) {
+                        logger.error(`Worker ${idx} exited unexpectedly with code ${code}`);
                     }
+                    markWorkerFinished();
                 });
             });
         });
